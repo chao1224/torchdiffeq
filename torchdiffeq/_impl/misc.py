@@ -140,8 +140,8 @@ class _TupleFunc(torch.nn.Module):
         self.base_func = base_func
         self.shapes = shapes
 
-    def forward(self, t, y):
-        f = self.base_func(t, _flat_to_shape(y, (), self.shapes))
+    def forward(self, t, y, condition):
+        f = self.base_func(t, _flat_to_shape(y, (), self.shapes), condition=condition)
         return torch.cat([f_.reshape(-1) for f_ in f])
 
 
@@ -151,8 +151,8 @@ class _TupleInputOnlyFunc(torch.nn.Module):
         self.base_func = base_func
         self.shapes = shapes
 
-    def forward(self, t, y):
-        return self.base_func(t, _flat_to_shape(y, (), self.shapes))
+    def forward(self, t, y, condition):
+        return self.base_func(t, _flat_to_shape(y, (), self.shapes), condition=condition)
 
 
 class _ReverseFunc(torch.nn.Module):
@@ -161,8 +161,8 @@ class _ReverseFunc(torch.nn.Module):
         self.base_func = base_func
         self.mul = mul
 
-    def forward(self, t, y):
-        return self.mul * self.base_func(-t, y)
+    def forward(self, t, y, condition):
+        return self.mul * self.base_func(-t, y, condition=condition)
 
 
 class Perturb(Enum):
@@ -177,7 +177,7 @@ class _PerturbFunc(torch.nn.Module):
         super(_PerturbFunc, self).__init__()
         self.base_func = base_func
 
-    def forward(self, t, y, *, perturb=Perturb.NONE):
+    def forward(self, t, y, *, condition, perturb=Perturb.NONE):
         assert isinstance(perturb, Perturb), "perturb argument must be of type Perturb enum"
         # This dtype change here might be buggy.
         # The exact time value should be determined inside the solver,
@@ -194,7 +194,7 @@ class _PerturbFunc(torch.nn.Module):
         else:
             # Do nothing.
             pass
-        return self.base_func(t, y)
+        return self.base_func(t, y, condition=condition)
 
 
 def _check_inputs(func, y0, t, rtol, atol, method, options, event_fn, SOLVERS):

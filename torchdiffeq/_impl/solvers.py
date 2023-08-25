@@ -52,7 +52,7 @@ class AdaptiveStepsizeEventODESolver(AdaptiveStepsizeODESolver, metaclass=abc.AB
 class FixedGridODESolver(metaclass=abc.ABCMeta):
     order: int
 
-    def __init__(self, func, y0, step_size=None, grid_constructor=None, interp="linear", perturb=False, **unused_kwargs):
+    def __init__(self, func, y0, condition, step_size=None, grid_constructor=None, interp="linear", perturb=False, **unused_kwargs):
         self.atol = unused_kwargs.pop('atol')
         unused_kwargs.pop('rtol', None)
         unused_kwargs.pop('norm', None)
@@ -99,7 +99,7 @@ class FixedGridODESolver(metaclass=abc.ABCMeta):
     def _step_func(self, func, t0, dt, t1, y0):
         pass
 
-    def integrate(self, t):
+    def integrate(self, t, condition):
         time_grid = self.grid_constructor(self.func, self.y0, t)
         assert time_grid[0] == t[0] and time_grid[-1] == t[-1]
 
@@ -111,7 +111,7 @@ class FixedGridODESolver(metaclass=abc.ABCMeta):
         for t0, t1 in zip(time_grid[:-1], time_grid[1:]):
             dt = t1 - t0
             self.func.callback_step(t0, y0, dt)
-            dy, f0 = self._step_func(self.func, t0, dt, t1, y0)
+            dy, f0 = self._step_func(self.func, t0, dt, t1, y0, condition=condition)
             y1 = y0 + dy
 
             while j < len(t) and t1 >= t[j]:
